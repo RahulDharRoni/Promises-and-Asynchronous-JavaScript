@@ -1,25 +1,24 @@
 import { central, db1, db2, db3, vault } from "./databases.js";
 
-async function getUserData(id) {
-  const dbs = { db1, db2, db3 };
+const dbs = { db1, db2, db3 };
 
+
+export async function getUserData(id) {
   try {
-    // Determine which database contains the user's data
+    
     const dbName = await central(id);
 
     if (!dbs[dbName]) {
-      return Promise.reject(
-        new Error(`Invalid database returned from central: ${dbName}`)
-      );
+      throw new Error(`Invalid database returned from central: ${dbName}`);
     }
 
-    // Fetch user data from the identified database
-    const userData = await dbs[dbName](id);
+    
+    const [userData, personalData] = await Promise.all([
+      dbs[dbName](id),
+      vault(id),
+    ]);
 
-    // Fetch personal data from the vault
-    const personalData = await vault(id);
-
-    // Combine the retrieved data into the required format
+ 
     return {
       id,
       name: personalData.name,
@@ -37,4 +36,5 @@ async function getUserData(id) {
   }
 }
 
-export { getUserData };
+// Example usage (Testing)
+getUserData(20).then(console.log).catch(console.error);
